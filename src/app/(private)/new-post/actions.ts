@@ -1,6 +1,7 @@
 "use server";
 import { apiFetch } from "@/lib/api";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export async function createPostAction(fd: FormData) {
   const token = (await cookies()).get("accessToken")?.value;
@@ -21,5 +22,6 @@ export async function createPostAction(fd: FormData) {
     body: payload,
     accessToken: token,
   });
-  return { ok: true };
+
+  redirect("/");
 }
