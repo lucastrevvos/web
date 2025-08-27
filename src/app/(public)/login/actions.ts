@@ -1,6 +1,7 @@
 "use server";
 import { cookies } from "next/headers";
 import { apiFetch } from "@/lib/api";
+import { redirect } from "next/navigation";
 
 export async function loginAction(fd: FormData) {
   const email = String(fd.get("email") || "");
@@ -25,5 +26,5 @@ export async function loginAction(fd: FormData) {
     maxAge: 60 * 60 * 24 * 30,
   });
 
-  return { ok: true };
+  redirect("/");
 }
