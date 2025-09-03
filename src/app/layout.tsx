@@ -1,3 +1,4 @@
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 import type { Metadata } from "next";
 
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body className="min-h-screen bg-white text-slate-900 antialiased">
+        <SiteHeader />
         {children}
       </body>
     </html>

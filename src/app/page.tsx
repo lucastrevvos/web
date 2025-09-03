@@ -1,3 +1,4 @@
+import { Sidebar } from "@/components/sidebar";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
 
@@ -17,25 +18,7 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-5x1 px-4 py-8">
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-2x1 font-bold tracking-tight">Trevvos</h1>
-        <nav className="space-x-3">
-          <a
-            href="/(public)/login"
-            className="text-sm text-slate-600 hover:text-slate-900"
-          >
-            Entrar
-          </a>
-          <a
-            href="/(private)/new-post"
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Novo Post
-          </a>
-        </nav>
-      </header>
-
-      <section className="grid gap-4">
+      <section className="grid gap-8 lg:grid-cols-[1fr,18rem]">
         {posts.map((p: Post) => (
           <article
             key={p.id}
@@ -58,6 +41,7 @@ export default async function Home() {
             )}
           </article>
         ))}
+        <Sidebar />
       </section>
     </main>
   );
