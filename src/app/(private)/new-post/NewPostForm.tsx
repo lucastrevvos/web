@@ -144,7 +144,7 @@ export default function NewPostForm({
         <label className="block text-sm font-medium">Slug</label>
         <input
           {...register("slug")}
-          className="input"
+          className="w-full rounded-md px-3 py-2 text-sm outline-none  border border-slate-200 focus:border-slate-500"
           placeholder="meu-post-exemplo"
         />
         {errors.slug && (
@@ -154,7 +154,10 @@ export default function NewPostForm({
 
       <div>
         <label className="block text-sm font-medium">Título</label>
-        <input {...register("title")} className="input" />
+        <input
+          {...register("title")}
+          className="w-full rounded-md px-3 py-2 text-sm outline-none  border border-slate-200 focus:border-slate-500"
+        />
         {errors.title && (
           <p className="text-red-600 text-sm">{errors.title.message}</p>
         )}
@@ -162,7 +165,11 @@ export default function NewPostForm({
 
       <div>
         <label className="block text-sm font-medium">Resumo</label>
-        <textarea {...register("excerpt")} rows={3} className="input" />
+        <textarea
+          {...register("excerpt")}
+          rows={3}
+          className="w-full rounded-md px-3 py-2 text-sm outline-none  border border-slate-200 focus:border-slate-500"
+        />
         {errors.excerpt && (
           <p className="text-red-600 text-sm">{errors.excerpt.message}</p>
         )}
@@ -170,7 +177,11 @@ export default function NewPostForm({
 
       <div>
         <label className="block text-sm font-medium">Conteúdo</label>
-        <textarea {...register("content")} rows={10} className="input" />
+        <textarea
+          {...register("content")}
+          rows={10}
+          className="w-full rounded-md px-3 py-2 text-sm outline-none  border border-slate-200 focus:border-slate-500"
+        />
         {errors.content && (
           <p className="text-red-600 text-sm">{errors.content.message}</p>
         )}

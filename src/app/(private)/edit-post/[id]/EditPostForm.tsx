@@ -1,17 +1,12 @@
-// apps/web/src/app/(private)/edit-post/[id]/EditPostForm.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { PostEditSchema, type PostEditInput } from "./schema";
 import { apiFetch, ApiError } from "@/lib/api";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { toast } from "sonner";
-import { useDebouncedCallback } from "use-debounce";
+import { MarkdownView } from "@/components/MarkdownView"; // << preview seguro
 
 export default function EditPostForm({
   postId,
@@ -52,11 +47,11 @@ export default function EditPostForm({
 
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
   const [tab, setTab] = useState<"edit" | "preview">("edit");
 
   // Mantém o toggle “Publicar/Despublicar” coerente com status atual
   const status = watch("status");
+  const contentValue = watch("content") || "";
 
   useEffect(() => {
     // garante que RHF está com os valores do server (se recarregar)
@@ -98,10 +93,13 @@ export default function EditPostForm({
       // Unique (ex.: slug)
       if (err.code === "P2002" && err.fields?.length) {
         for (const name of err.fields) {
-          if (name === "slug")
+          if (name === "slug") {
             setError("slug", { message: "Este slug já está em uso." });
-          // @ts-ignore (fallback para outros únicos no futuro)
-          else setError(name, { message: "Já está em uso." });
+          } else {
+            // fallback para outros únicos no futuro
+            // @ts-ignore
+            setError(name, { message: "Já está em uso." });
+          }
         }
         setFormError("Corrija os campos destacados.");
         return;
@@ -217,13 +215,12 @@ export default function EditPostForm({
             {...register("content")}
             rows={10}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            placeholder="Markdown (aceita HTML básico, sanitizado)"
           />
         ) : (
-          <article className="prose prose-slate max-w-nonde border rounded-md p-4">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {watch("content") || ""}
-            </ReactMarkdown>
-          </article>
+          <div className="rounded-md border border-slate-200 bg-white p-4">
+            <MarkdownView markdown={contentValue} />
+          </div>
         )}
 
         {errors.content && (
@@ -241,7 +238,6 @@ export default function EditPostForm({
                 value={c.id}
                 {...register("categoryIds")}
                 className="h-4 w-4"
-                defaultChecked={initialValues.categoryIds.includes(c.id)}
               />
               <span>{c.name}</span>
             </label>
@@ -267,7 +263,6 @@ export default function EditPostForm({
                 value={t.id}
                 {...register("tagIds")}
                 className="h-4 w-4"
-                defaultChecked={initialValues.tagIds.includes(t.id)}
               />
               <span>#{t.name}</span>
             </label>

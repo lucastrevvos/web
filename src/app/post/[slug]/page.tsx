@@ -1,3 +1,4 @@
+import { MarkdownView } from "@/components/MarkdownView";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
 
@@ -70,7 +71,7 @@ export default async function PostPage({ params }: Props) {
         <div dangerouslySetInnerHTML={{ __html: post.excerpt }}></div>
       </article>
       <article className="prose prose-slate max-w-none">
-        <div dangerouslySetInnerHTML={{ __html: post.content }}></div>
+        <MarkdownView markdown={post.content || ""} />
       </article>
     </main>
   );
