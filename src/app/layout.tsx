@@ -1,6 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Trevvos",
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-white text-slate-900 antialiased">
         <SiteHeader />
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
