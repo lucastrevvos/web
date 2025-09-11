@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -24,6 +24,7 @@ export default function EditPostForm({
     categoryIds: string[];
     tagIds: string[];
     status: "DRAFT" | "PUBLISHED";
+    coverImage?: string;
   };
   categories: any[];
   tags: any[];
@@ -41,6 +42,7 @@ export default function EditPostForm({
     resolver: zodResolver(PostEditSchema),
     defaultValues: {
       ...initialValues,
+      coverImage: initialValues.coverImage ?? "",
       intent: "save",
     },
   });
@@ -52,12 +54,89 @@ export default function EditPostForm({
   // Mantém o toggle “Publicar/Despublicar” coerente com status atual
   const status = watch("status");
   const contentValue = watch("content") || "";
+  const coverUrl = watch("coverImage") || "";
+
+  // refs para inputs de arquivo
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const contentImageInputRef = useRef<HTMLInputElement>(null);
+
+  // estados de upload
+  const [uplodingCover, setUploadingCover] = useState(false);
+  const [uplodingInline, setUplodingInline] = useState(false);
 
   useEffect(() => {
     // garante que RHF está com os valores do server (se recarregar)
-    reset({ ...initialValues, intent: "save" });
+    reset({
+      ...initialValues,
+      coverImage: initialValues.coverImage ?? "",
+      intent: "save",
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
+
+  //helper de upload para a API
+  async function uploadToApi(file: File): Promise<string> {
+    const API = process.env.NEXT_PUBLIC_API_URL!;
+    const APP = process.env.NEXT_PUBLIC_APP_SLUG || "portal";
+
+    const body = new FormData();
+    body.append("file", file);
+
+    const res = await fetch(`${API}/uploads`, {
+      method: "POST",
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        "x-app-slug": APP,
+      } as any,
+      body,
+    } as any);
+
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "");
+      throw new Error(msg || `Falha no upload (${res.status})`);
+    }
+
+    const data = (await res.json()) as { url: string };
+    if (!data?.url) throw new Error("Resposta inválida do servidor de upload.");
+
+    return data.url;
+  }
+
+  // handlers dos dois uploads
+  async function handleUploadCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingCover(true);
+      const url = await uploadToApi(file);
+      setValue("coverImage", url, { shouldDirty: true });
+    } catch (err: any) {
+      alert(err?.message || "Falha ao enviar capa");
+    } finally {
+      setUploadingCover(false);
+      e.currentTarget.value = "";
+    }
+  }
+
+  async function handleUploadInline(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUplodingInline(true);
+      const url = await uploadToApi(file);
+      const alt = file.name.replace(/\.[^.]+$/, "") || "imagem";
+      const insertion = `\n\n![${alt}](${url})\n\n`;
+
+      setValue("content", contentValue + insertion, { shouldDirty: true });
+      setTab("preview");
+    } catch (err: any) {
+      alert(err?.message || "Falha ao enviar imagem");
+    } finally {
+      setUplodingInline(false);
+      e.currentTarget.value = "";
+    }
+  }
 
   const onSubmit = async (values: PostEditInput) => {
     setFormError(null);
@@ -82,11 +161,12 @@ export default function EditPostForm({
           categoryIds: parsed.categoryIds,
           tagIds: parsed.tagIds,
           status: nextStatus,
+          coverImage: parsed.coverImage || null,
         },
       });
 
       setSuccess("Post atualizado com sucesso!");
-      setValue("status", nextStatus); // reflete na UI
+      setValue("status", nextStatus, { shouldDirty: false }); // reflete na UI
     } catch (e) {
       const err = e as ApiError;
 
@@ -186,7 +266,66 @@ export default function EditPostForm({
         )}
       </div>
 
-      <div className="mb-2 flex gap-2 text-sm">
+      {/* Capa (com upload) */}
+      <div>
+        <label className="mb-1 block text-sm font-medium">Capa</label>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            {...register("coverImage")}
+            placeholder="URL da capa (opcional)"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 md:w-auto md:flex-1"
+          />
+
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUploadCover}
+          />
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={uplodingCover}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-60"
+            title="Enviar arquivo de imagem e preencher a URL automaticamente"
+          >
+            {uplodingCover ? "Enviando..." : "Upload capa"}
+          </button>
+
+          {!!coverUrl && (
+            <button
+              type="button"
+              onClick={() => setValue("coverImage", "", { shouldDirty: true })}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+            >
+              Remover capa
+            </button>
+          )}
+        </div>
+
+        {!!coverUrl && (
+          <div className="mt-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={coverUrl}
+              alt="Capa"
+              className="h-24 w-auto rounded-md border border-slate-200"
+            />
+          </div>
+        )}
+
+        {errors.coverImage && (
+          <p className="mt-1 text-xs text-red-600">
+            {errors.coverImage.message as any}
+          </p>
+        )}
+      </div>
+
+      {/* Editor / Preview + Upload inline */}
+
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
         <button
           type="button"
           onClick={() => setTab("edit")}
@@ -204,6 +343,25 @@ export default function EditPostForm({
           }
         >
           Preview
+        </button>
+
+        <span className="mx-2 hidden text-slate-300 md:inline">|</span>
+
+        <input
+          type="file"
+          ref={contentImageInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleUploadInline}
+        />
+        <button
+          type="button"
+          onClick={() => contentImageInputRef.current?.click()}
+          disabled={uplodingInline}
+          className="text-slate-600 hover:underline disabled:opacity-60"
+          title="Faz upload e insere ![alt](url) no conteúdo"
+        >
+          {uplodingInline ? "Enviando imagem..." : "Inserir imagem no conteúdo"}
         </button>
       </div>
 

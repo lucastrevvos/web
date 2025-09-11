@@ -16,6 +16,9 @@ export const PostEditSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
   // ação do botão
   intent: z.enum(["save", "publish", "unpublish"]).default("save"),
+  coverImage: z
+    .union([z.literal(""), z.url("Informe uma URL válida")])
+    .optional(),
 });
 
 export type PostEditInput = z.input<typeof PostEditSchema>;
